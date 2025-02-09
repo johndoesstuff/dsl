@@ -100,9 +100,11 @@ int main(int argc, char *argv[]) {
 
 			fprintf(file, "%s\n", argv[2]);
 			fprintf(file, "%lld\n", current_time_ms());
+			printf("Event %s added successfully.\n", argv[2]);
 		} else if (strcmp(argv[1], "-clearall") == 0) {
 			file = fopen(filepath, "w");
 			fclose(file);
+			printf("Events cleared successfully.\n");
 		} else if (strcmp(argv[1], "-remove") == 0) {
 			if (argc < 3) {
 				fprintf(stderr, "Error: Please provide the event title to remove.\n");
