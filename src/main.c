@@ -73,10 +73,60 @@ int main(int argc, char *argv[]) {
 
 			fprintf(file, "%s\n", argv[2]);
 			fprintf(file, "%lld\n", current_time_ms());
-		}
-		if (strcmp(argv[1], "-clearall") == 0) {
+		} else if (strcmp(argv[1], "-clearall") == 0) {
 			file = fopen(filepath, "w");
 			fclose(file);
+		} else if (strcmp(argv[1], "-remove") == 0) {
+			if (argc < 3) {
+				fprintf(stderr, "Error: Please provide the event title to remove.\n");
+				return 1;
+			}
+
+			// Open temp file
+			FILE *temp_file = fopen("temp.dsl", "w");
+			if (!temp_file) {
+				perror("Error opening temporary file");
+				return 1;
+			}
+
+			char event_title[MAX_LINE_LENGTH];
+			char event_time[MAX_LINE_LENGTH];
+			int removed = 0;
+			rewind(file);
+
+			printf("check start\n");
+			while (fgets(event_title, sizeof(event_title), file) && fgets(event_time, sizeof(event_time), file)) {
+				event_title[strcspn(event_title, "\n")] = '\0';
+				printf("checking %s, %s\n", event_title, argv[2]);
+				if (strcmp(event_title, argv[2]) == 0) {
+					removed = 1;
+					continue;
+				}
+				fprintf(temp_file, "%s\n", event_title);
+				fprintf(temp_file, "%s", event_time);
+			}
+			printf("check end\n");
+
+			fclose(file);
+			fclose(temp_file);
+
+			if (!removed) {
+				printf("No event found with title: %s\n", argv[2]);
+				remove("temp.dsl");  // Clean up temp file
+				return 1;
+			}
+
+			// Replace the original file with the temporary file
+			if (remove(filepath) != 0) {
+				perror("Error deleting original file");
+				return 1;
+			}
+			if (rename("temp.dsl", filepath) != 0) {
+				perror("Error renaming temporary file");
+				return 1;
+			}
+
+			printf("Event '%s' removed successfully.\n", argv[2]);
 		}
 	} else {
 		printf("Days Since Last\n");
