@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #define MAX_LINE_LENGTH 1024
 #define MAX_EVENTS 256
@@ -17,7 +20,29 @@ long long current_time_ms() {
 	return (long long)(tv.tv_sec) * 1000 + (tv.tv_usec / 1000);
 }
 
+void restore_cursor(int signum) {
+	(void)signum;
+	printf("\033[?25h\n");
+	fflush(stdout);
+	exit(1);
+}
+
+void disable_keyboard() {
+	int dev_null = open("/dev/null", O_RDONLY);
+	dup2(dev_null, STDIN_FILENO); 
+	close(dev_null);
+}
+
 int main(int argc, char *argv[]) {
+	//exit handler
+	struct sigaction sa;
+	sa.sa_handler = restore_cursor;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	sigaction(SIGINT, &sa, NULL);
+
+	disable_keyboard();
+
 	Event *events = malloc(MAX_EVENTS * sizeof(Event));
 	const char *home = getenv("HOME");
 	if (!home) {
@@ -130,6 +155,7 @@ int main(int argc, char *argv[]) {
 	} else {
 		printf("Days Since Last\n");
 		rewind(file);
+		printf("\033[?25l");
 
 		while (1) {
 			for (int i = 0; i < event_count; i++) {
@@ -147,15 +173,15 @@ int main(int argc, char *argv[]) {
 				days %= 365;
 
 				if (years > 0) {
-					printf("%s: %dy, %dd, %02d:%02d:%02d\n", events[i].event_title, years, days, hours, minutes, seconds);
+					printf("%s: %dy, %dd, %02d:%02d:%02d                    \n", events[i].event_title, years, days, hours, minutes, seconds);
 				} else if (days > 0) {
-					printf("%s: %dd, %02d:%02d:%02d\n", events[i].event_title, days, hours, minutes, seconds);
+					printf("%s: %dd, %02d:%02d:%02d                    \n", events[i].event_title, days, hours, minutes, seconds);
 				} else if (hours > 0) {
-					printf("%s: %d:%02d:%02d\n", events[i].event_title, hours, minutes, seconds);
+					printf("%s: %d:%02d:%02d                    \n", events[i].event_title, hours, minutes, seconds);
 				} else if (minutes > 0) {
-					printf("%s: %d:%02d\n", events[i].event_title, minutes, seconds);
+					printf("%s: %d:%02d                    \n", events[i].event_title, minutes, seconds);
 				} else {	
-					printf("%s: %d seconds\n", events[i].event_title, seconds);		
+					printf("%s: %d seconds                    \n", events[i].event_title, seconds);		
 				}
 			}
 
