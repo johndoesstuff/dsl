@@ -45,10 +45,12 @@ int main(int argc, char *argv[]) {
 
 	char line[MAX_LINE_LENGTH];
 	int i = 0;
+	int event_count = 0;
 	while (fgets(line, sizeof(line), file)) {
 		line[strcspn(line, "\n")] = '\0';
 		if (i%2 == 0) {
 			strncpy(events[i/2].event_title, line, MAX_LINE_LENGTH);
+			event_count++;
 		} else {
 			long long timeMS = 0LL;
 			sscanf(line, "%lld", &timeMS);
@@ -94,10 +96,8 @@ int main(int argc, char *argv[]) {
 			int removed = 0;
 			rewind(file);
 
-			printf("check start\n");
 			while (fgets(event_title, sizeof(event_title), file) && fgets(event_time, sizeof(event_time), file)) {
 				event_title[strcspn(event_title, "\n")] = '\0';
-				printf("checking %s, %s\n", event_title, argv[2]);
 				if (strcmp(event_title, argv[2]) == 0) {
 					removed = 1;
 					continue;
@@ -105,7 +105,6 @@ int main(int argc, char *argv[]) {
 				fprintf(temp_file, "%s\n", event_title);
 				fprintf(temp_file, "%s", event_time);
 			}
-			printf("check end\n");
 
 			fclose(file);
 			fclose(temp_file);
@@ -132,11 +131,39 @@ int main(int argc, char *argv[]) {
 		printf("Days Since Last\n");
 		rewind(file);
 
-		char line[MAX_LINE_LENGTH];
-		while (fgets(line, sizeof(line), file)) {
-			printf("%s", line);
-		}
+		while (1) {
+			for (int i = 0; i < event_count; i++) {
+				long long event_time_ms = events[i].event_time;
+				long long now_time_ms = current_time_ms();
+				long long time_since = now_time_ms - event_time_ms;
+				int seconds = (int)(time_since/1000);
+				int minutes = seconds/60;
+				int hours = minutes/60;
+				int days = hours/24;
+				int years = days/365;
+				seconds %= 60;
+				minutes %= 60;
+				hours %= 24;
+				days %= 365;
 
+				if (years > 0) {
+					printf("%s: %dy, %dd, %02d:%02d:%02d\n", events[i].event_title, years, days, hours, minutes, seconds);
+				} else if (days > 0) {
+					printf("%s: %dd, %02d:%02d:%02d\n", events[i].event_title, days, hours, minutes, seconds);
+				} else if (hours > 0) {
+					printf("%s: %d:%02d:%02d\n", events[i].event_title, hours, minutes, seconds);
+				} else if (minutes > 0) {
+					printf("%s: %d:%02d\n", events[i].event_title, minutes, seconds);
+				} else {	
+					printf("%s: %d seconds\n", events[i].event_title, seconds);		
+				}
+			}
+
+			//move line up to update
+			for (int i = 0; i < event_count; i++) {
+				printf("\033[A");
+			}
+		}
 		fclose(file);
 		return 0;
 	}
