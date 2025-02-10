@@ -203,6 +203,16 @@ int main(int argc, char *argv[]) {
 			}
 
 			printf("Event '%s' updated successfully.\n", argv[2]);
+		} else if (strcmp(argv[1], "-help") == 0) {
+			printf("dsl [<arguments>]\n");
+			printf("\t-remove [event]\n");
+			printf("\t\tRemove an event\n");
+			printf("\t-add [event]\n");
+			printf("\t\tAdd an event starting at the time of creation\n");
+			printf("\t-clearall\n");
+			printf("\t\tClear all active events\n");
+			printf("\t-update [event]\n");
+			printf("\t\tReset the counter of time since last event\n");
 		}
 
 	} else {
